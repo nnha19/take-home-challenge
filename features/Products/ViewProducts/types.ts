@@ -11,3 +11,9 @@ export interface CardType {
 export interface CartItemType extends CardType {
   pickedQty: number;
 }
+
+export interface SearchQueryType {
+  name?: string;
+  types?: string;
+  rarity?: string;
+}

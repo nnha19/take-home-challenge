@@ -39,10 +39,9 @@ const ViewProducts = ({ data }) => {
     displaySkeletons,
     handleSearchCards,
     setDisplaySkeletons,
-    filteredResult,
-    setFilteredResult,
     handleFilterCards,
     setSearchQuery,
+    searchQuery,
   } = useViewProductsHook(data);
 
   if (!cards) {
@@ -51,6 +50,16 @@ const ViewProducts = ({ data }) => {
 
   const renderedCars = cards.map((card) => {
     const isProductSelected = cartItems.some((i) => i.id === card.id);
+    let cardName;
+    if (card.name.length > 16) {
+      cardName = card.name
+        .split("")
+        .splice(0, 13)
+        .concat([".", ".", "."])
+        .join("");
+    } else {
+      cardName = card.name;
+    }
 
     return (
       <CardContainer>
@@ -71,14 +80,14 @@ const ViewProducts = ({ data }) => {
               fontWeight="700"
               textAlign="center"
             >
-              {card.name}
+              {cardName}
             </Header>
             <Text margin="0 0 6.2px 0" color="#0F6DB0" textAlign="center">
               {card.rarity}
             </Text>
             <Flex justify="center">
               <Text margin="0 29.3px 0 0" fontSize="20px" color="#6A6969">
-                ${card.cardmarket.prices.averageSellPrice}
+                ${card.cardmarket?.prices?.averageSellPrice}
               </Text>
               <Text fontSize="20px" color="#6A6969">
                 {card.set.total} left
@@ -98,17 +107,17 @@ const ViewProducts = ({ data }) => {
     );
   });
 
+  const queryIsApplied = !!Object.keys(searchQuery).length;
+
   return (
     <Wrapper>
       <Navbar />
       <FilterCards
+        searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         setDisplaySkeletons={setDisplaySkeletons}
-        handleSearchCards={handleSearchCards}
         data={data}
         setCards={setCards}
-        setFilteredResult={setFilteredResult}
-        handleFilterCards={handleFilterCards}
       />
       {displaySkeletons && <SkeletonLoading />}
       {!displaySkeletons && <CardsContainer>{renderedCars}</CardsContainer>}
@@ -118,7 +127,7 @@ const ViewProducts = ({ data }) => {
         padding="0 0 2rem 0"
         justify="center"
       >
-        {!isLoading && !filteredResult && (
+        {!isLoading && !queryIsApplied && (
           <>
             <AiOutlineSearch />
             <Text margin="0 .5rem">Show more</Text>

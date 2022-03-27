@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { CardType, CartItemType } from "./types";
+import { CardType, CartItemType, SearchQueryType } from "./types";
 import toast from "react-hot-toast";
 
 export const useViewProductsHook = (data: any) => {
@@ -9,18 +9,9 @@ export const useViewProductsHook = (data: any) => {
   const [cards, setCards] = useState<CardType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [displaySkeletons, setDisplaySkeletons] = useState(false);
+  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
-  // If search or filter is applied, this will be true and the show more btn will be hidden.
-  const [filteredResult, setFilteredResult] = useState(false);
-  const [searchQuery, setSearchQuery] = useState({
-    name: "amp",
-    rarity: "common",
-    types: "colorless",
-  });
-
-  console.log(
-    `?q=name:${searchQuery.name} types:${searchQuery.types} rarity:${searchQuery.rarity}`
-  );
+  const [searchQuery, setSearchQuery] = useState<SearchQueryType>({});
 
   const handleFetchMoreItems = async () => {
     try {
@@ -72,23 +63,67 @@ export const useViewProductsHook = (data: any) => {
     setCards(data?.data?.data);
   }, [data]);
 
-  const cartItemsAmount = cartItems.reduce(
-    (prev, cur) => cur.pickedQty + prev,
-    0
-  );
-
   const handleSearchCards = async (query: string) => {
+    if (Object.keys(searchQuery).length < 1) return;
     setDisplaySkeletons(true);
     try {
-      const resp = await axios(
-        `https://api.pokemontcg.io/v2/cards?q=name:${query}*`
-      );
+      const resp = await axios(`https://api.pokemontcg.io/v2/cards${query}`);
       setCards(resp.data.data);
       setDisplaySkeletons(false);
     } catch (err) {
       setDisplaySkeletons(false);
     }
   };
+
+  useEffect(() => {
+    let query = `?q=`;
+    //   Wait for 600 milisec before calling the api to see if user continues typing
+
+    setDisplaySkeletons(true);
+    if (searchQuery?.name !== "") {
+      if (timer) {
+        clearTimeout(timer);
+      }
+      const clearTimer = setTimeout(() => {
+        for (let key in searchQuery) {
+          if (key === "name") {
+            query = `${query} ${key}:${searchQuery[key]}*`;
+          } else {
+            query = `${query} ${key}:${
+              searchQuery[key as keyof SearchQueryType]
+            }`;
+          }
+        }
+        handleSearchCards(query);
+      }, 2000);
+      setTimer(clearTimer);
+    } else {
+      if (timer) clearTimeout(timer);
+      setDisplaySkeletons(false);
+      setCards(data.data.data);
+    }
+  }, [searchQuery.name]);
+
+  useEffect(() => {
+    let query = `?q=`;
+    for (let key in searchQuery) {
+      if (searchQuery[key as keyof SearchQueryType].length > 0) {
+        if (key === "name") {
+          query = `${query} ${key}:${searchQuery[key]}*`;
+        } else {
+          query = `${query} ${key}:${
+            searchQuery[key as keyof SearchQueryType]
+          }`;
+        }
+      }
+    }
+    handleSearchCards(query);
+  }, [searchQuery.rarity, searchQuery.types]);
+
+  const cartItemsAmount = cartItems.reduce(
+    (prev, cur) => cur.pickedQty + prev,
+    0
+  );
 
   const handleFilterCards = (selectedOption: string, type: string) => {};
 
@@ -108,9 +143,8 @@ export const useViewProductsHook = (data: any) => {
     displaySkeletons,
     setDisplaySkeletons,
     handleSearchCards,
-    filteredResult,
-    setFilteredResult,
     handleFilterCards,
+    searchQuery,
     setSearchQuery,
   };
 };

@@ -8,60 +8,24 @@ import {
   SearchCardsInput,
 } from "./FilterCards.styled";
 
-import { CardType } from "../../types";
+import { CardType, SearchQueryType } from "../../types";
+import Text from "../../../../../components/Text/Text";
 
 interface FilterCardsType {
-  handleSearchCards: (query: string) => void;
   setDisplaySkeletons: React.Dispatch<React.SetStateAction<boolean>>;
   data: any;
   setCards: React.Dispatch<React.SetStateAction<CardType[]>>;
-  setFilteredResult: React.Dispatch<React.SetStateAction<boolean>>;
-  handleFilterCards: (selectedOption: string, type: string) => void;
-  setSearchQuery: React.Dispatch<
-    React.SetStateAction<{
-      name: string;
-      rarity: string;
-      types: string;
-    }>
-  >;
+  searchQuery: SearchQueryType;
+  setSearchQuery: React.Dispatch<React.SetStateAction<SearchQueryType>>;
 }
 
 const FilterCards: React.FC<FilterCardsType> = ({
-  handleSearchCards,
   setDisplaySkeletons,
   setCards,
   data,
-  handleFilterCards,
-  setFilteredResult,
+  searchQuery,
+  setSearchQuery,
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const handleChange = ({ target: { value } }: any) => {
-    setSearchQuery(value);
-  };
-
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    //   Wait for 600 milisec before calling the api to see if user continues typing
-    setDisplaySkeletons(true);
-    if (searchQuery !== "") {
-      if (timer) {
-        clearTimeout(timer);
-      }
-      const clearTimer = setTimeout(() => {
-        handleSearchCards(searchQuery);
-        setFilteredResult(true);
-      }, 2000);
-      setTimer(clearTimer);
-    } else {
-      if (timer) clearTimeout(timer);
-      setDisplaySkeletons(false);
-      setCards(data.data.data);
-      setFilteredResult(false);
-    }
-  }, [searchQuery]);
-
   const options = ["opt1", "opt2", "opt3", "opt4"];
 
   const types = [
@@ -104,12 +68,20 @@ const FilterCards: React.FC<FilterCardsType> = ({
     "Uncommon",
   ];
 
+  const handleClearFilter = () => {
+    setSearchQuery({});
+    setCards(data.data.data);
+    setDisplaySkeletons(false);
+  };
+
   return (
     <FilterWrapper>
       <FilterContainer>
         <SearchCardsInput
-          value={searchQuery}
-          onChange={handleChange}
+          value={searchQuery["name"] ? searchQuery["name"] : ""}
+          onChange={(e) =>
+            setSearchQuery((prev) => ({ ...prev, name: e.target.value }))
+          }
           type="text"
           placeholder="Name..."
         />
@@ -117,7 +89,8 @@ const FilterCards: React.FC<FilterCardsType> = ({
           className="filterByType"
           options={types}
           onChange={(value) =>
-            handleFilterCards(value.value.toLowerCase(), "types")
+            // handleFilterCards(value.value.toLowerCase(), "types")
+            setSearchQuery((prev) => ({ ...prev, types: value.value }))
           }
           placeholder="Types"
         />
@@ -125,17 +98,28 @@ const FilterCards: React.FC<FilterCardsType> = ({
           className="filterByType"
           options={rarityOptions}
           onChange={(value) => {
-            handleFilterCards(value.value.toLowerCase(), "rarity");
+            setSearchQuery((prev) => ({ ...prev, rarity: value.value }));
           }}
           placeholder="Rarity"
         />
         <Dropdown
           className="filterByType"
           options={options}
-          onChange={(values) => {}}
+          //   onChange={(values) => {
+          // I am not sure how filter by Set is supposed to work since Set is an object.
+          // }}
           placeholder="Set"
         />
       </FilterContainer>
+      <Text
+        onClick={handleClearFilter}
+        textDecoration="underline"
+        cursor="pointer"
+        margin="1rem auto"
+        style={{ width: "max-content" }}
+      >
+        Clear filter
+      </Text>
     </FilterWrapper>
   );
 };

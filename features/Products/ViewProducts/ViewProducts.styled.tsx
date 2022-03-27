@@ -13,6 +13,7 @@ export const CardsContainer = styled.div`
   gap: 73px;
   justify-items: center;
   padding: 3rem;
+  min-height: 100vh;
 `;
 export const CardContainer = styled.div`
   text-align: center;
